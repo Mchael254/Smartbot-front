@@ -1,0 +1,21 @@
+input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 1px 5px rgba(175, 212, 239, 0.6);
+}
+
+
+@media screen and (max-width:720px){
+    .main{
+        background-color: red;
+        display: flex;
+        align-items: center;
+        justify-items: center;
+    }
+    .imageSide{
+        display: none;
+    }
+    .formSide{
+        width: 100vw;
+    }
+    
+}

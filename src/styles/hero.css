@@ -1,0 +1,116 @@
+@media screen and (max-width:575px) {
+    .welcome {
+        width: 80vw;
+    }
+
+    .messageContainer {
+        width: 80vw;
+    }
+
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .welcome {
+        width: 80vw;
+    }
+
+    .messageContainer {
+        /* background-color: red; */
+        width: 75vw;
+    }
+
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .welcome {
+        width: 43vw;
+    }
+
+    .messageContainer {
+        width: 45vw;
+    }
+
+}
+
+/* Enhanced Scrollbar Styling */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Animation for slide-in effect */
+@keyframes slideInFromBottom {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-in {
+    animation: slideInFromBottom 0.3s ease-out;
+}
+
+.slide-in-from-bottom-2 {
+    animation: slideInFromBottom 0.2s ease-out;
+}
+
+.slide-in-from-bottom-5 {
+    animation: slideInFromBottom 0.5s ease-out;
+}
+
+.dot-flashing {
+          position: relative;
+          width: 6px;
+          height: 6px;
+          margin: 0 3px;
+          background-color: #fff;
+          border-radius: 50%;
+          display: inline-block;
+          animation: dotFlashing 1.4s infinite linear alternate;
+          animation-fill-mode: forwards;
+        }
+
+        .dot-flashing:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .dot-flashing:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes dotFlashing {
+          0% {
+            opacity: 0.2;
+            transform: translateY(0);
+          }
+          20% {
+            opacity: 1;
+            transform: translateY(-5px);
+          }
+          100% {
+            opacity: 0.2;
+            transform: translateY(0);
+          }
+        }

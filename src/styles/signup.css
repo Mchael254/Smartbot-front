@@ -1,0 +1,23 @@
+input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 1px 5px rgba(175, 212, 239, 0.6);
+}
+
+
+@media screen and (max-width:400px) {
+    .imageBg {
+        display: none;
+        border: black solid 2px;
+
+    }
+
+}
+
+
+@media screen and (max-width:720px) {
+    .imageBg {
+        display: none;
+
+    }
+
+}

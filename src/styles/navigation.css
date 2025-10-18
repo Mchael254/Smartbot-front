@@ -1,0 +1,57 @@
+@media screen and (max-width:575px) {
+  .smartLinks {
+    display: none;
+  }
+
+  .governmentLinks {
+    display: none;
+  }
+
+  .ictaLogo {
+    width: 80%;
+  }
+
+}
+
+
+
+
+/* Small devices (landscape phones, ≥ 576px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .smartLinks {
+    display: none;
+  }
+
+  .ictaLogo {
+    width: 80%;
+  }
+
+  .governmentLinks {
+    display: none;
+  }
+}
+
+/* Medium devices (tablets, ≥ 768px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .smartLinks {
+    display: none;
+  }
+
+  .ictaLogo {
+    width: 80%;
+  }
+
+  .governmentLinks {
+    display: none;
+  }
+}
+
+/* Large devices (desktops, ≥ 992px) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  /* Styles for small desktops/laptops */
+}
+
+/* Extra large devices (large desktops, ≥ 1200px) */
+@media (min-width: 1200px) {
+  /* Styles for large screens */
+}
