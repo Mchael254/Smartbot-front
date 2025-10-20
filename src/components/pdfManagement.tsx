@@ -3,13 +3,17 @@ import { RefreshCw, Upload as UploadIcon, FileText, Brain, Server, Database, Zap
 import PdfUploadComponent from './pdfUpload';
 import PdfListComponent from './pdfList';
 import Modal from './modal';
+import ResponseComponent from './response';
+import { useSnackbar } from '../hooks/snackBar';
 import type { PdfFileWithSelection } from '../types/pdf';
-import { pdfService } from '../services/pdfService';
-import { urlsService, type WebUrl, type InsertWebUrlRequest } from '../services/urlsService';
-import knowledgeBaseService from '../services/knowledgeBaseService';
+import { urlsService, type WebUrl, type InsertWebUrlRequest } from '../services/knowledgeBase/urlsService';
+import knowledgeBaseService from '../services/knowledgeBase/knowledgeBaseService';
 import type { KnowledgeBaseReloadResponse, KnowledgeBaseStats } from '../types/knowledgeBase';
+import pdfService from '../services/knowledgeBase/pdfService';
 
 const PdfManagement: React.FC = () => {
+  const { open, message, severity, showSnackbar, handleClose } = useSnackbar();
+  
   const [files, setFiles] = useState<PdfFileWithSelection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +37,8 @@ const PdfManagement: React.FC = () => {
   const [urlsLoading, setUrlsLoading] = useState(false);
   const [urlsError, setUrlsError] = useState<string | null>(null);
   const [showAddUrlModal, setShowAddUrlModal] = useState(false);
+  const [showDeleteUrlModal, setShowDeleteUrlModal] = useState(false);
+  const [urlToDelete, setUrlToDelete] = useState<WebUrl | null>(null);
   const [urlFormData, setUrlFormData] = useState({ title: '', url: '', description: '' });
   const [deletingUrls, setDeletingUrls] = useState<Set<string>>(new Set());
   
@@ -80,11 +86,13 @@ const PdfManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await pdfService.getAllPdfs();
-      console.log('PDF All Response:', response); // Debug log
+      // console.log('PDF All Response:', response); 
       setFiles(response.files || []);
     } catch (error) {
       console.error('Failed to load files:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load files');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load files';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -98,7 +106,9 @@ const PdfManagement: React.FC = () => {
       setKbStats(stats);
     } catch (error) {
       console.error('Failed to load knowledge base stats:', error);
-      setKbError(error instanceof Error ? error.message : 'Failed to load knowledge base stats');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load knowledge base stats';
+      setKbError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setKbLoading(false);
     }
@@ -109,9 +119,11 @@ const PdfManagement: React.FC = () => {
       setLlmServiceHealth('checking');
       await knowledgeBaseService.checkHealth();
       setLlmServiceHealth('healthy');
+      showSnackbar('LLM service is online and ready', 'success');
     } catch (error) {
       console.error('LLM service health check failed:', error);
       setLlmServiceHealth('unhealthy');
+      showSnackbar('LLM service is offline. Please check the connection.', 'error');
     }
   };
 
@@ -123,6 +135,8 @@ const PdfManagement: React.FC = () => {
       clearMessageTimeouts(); // Clear any existing timeouts
       
       console.log('Starting knowledge base reload...');
+      showSnackbar('Starting knowledge base reload...', 'warning');
+      
       const result = await knowledgeBaseService.reloadKnowledgeBase(true);
       
       console.log('Knowledge base reload result:', result);
@@ -133,6 +147,13 @@ const PdfManagement: React.FC = () => {
         setLastReloadResult(null);
       }, 6000);
       
+      // Show success message
+      if (result.status === 'success') {
+        showSnackbar(`Knowledge base reloaded successfully! ${result.documents_count || 0} documents loaded.`, 'success');
+      } else {
+        showSnackbar(`Knowledge base reload completed with warnings: ${result.message}`, 'warning');
+      }
+      
       // Refresh stats after reload
       await loadKnowledgeBaseStats();
       
@@ -140,6 +161,7 @@ const PdfManagement: React.FC = () => {
       console.error('Failed to reload knowledge base:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to reload knowledge base';
       setKbError(errorMessage);
+      showSnackbar(errorMessage, 'error');
       
       // Set timeout to auto-hide error message after 30 seconds
       kbErrorTimeoutRef.current = setTimeout(() => {
@@ -173,7 +195,9 @@ const PdfManagement: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to load URLs:', error);
-      setUrlsError(error instanceof Error ? error.message : 'Failed to load URLs');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load URLs';
+      setUrlsError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setUrlsLoading(false);
     }
@@ -184,13 +208,16 @@ const PdfManagement: React.FC = () => {
       const response = await urlsService.insertUrl(urlData);
       if (response.success) {
         await loadUrls(); // Refresh the list
+        showSnackbar(response.message || 'URL added successfully!', 'success');
         return { success: true, message: response.message };
       } else {
         throw new Error(response.message);
       }
     } catch (error) {
       console.error('Failed to add URL:', error);
-      return { success: false, message: error instanceof Error ? error.message : 'Failed to add URL' };
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add URL';
+      showSnackbar(errorMessage, 'error');
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -199,38 +226,51 @@ const PdfManagement: React.FC = () => {
       const response = await urlsService.toggleUrlActive(urlId);
       if (response.success) {
         await loadUrls(); // Refresh the list
+        showSnackbar(response.message || 'URL status updated successfully!', 'success');
         return { success: true, message: response.message };
       } else {
         throw new Error(response.message);
       }
     } catch (error) {
       console.error('Failed to toggle URL active status:', error);
-      return { success: false, message: error instanceof Error ? error.message : 'Failed to toggle URL status' };
+      const errorMessage = error instanceof Error ? error.message : 'Failed to toggle URL status';
+      showSnackbar(errorMessage, 'error');
+      return { success: false, message: errorMessage };
     }
   };
 
-  const handleDeleteUrl = async (urlId: string): Promise<{ success: boolean; message: string }> => {
-    if (deletingUrls.has(urlId)) {
+  const handleDeleteUrl = async (url: WebUrl) => {
+    setUrlToDelete(url);
+    setShowDeleteUrlModal(true);
+  };
+
+  const confirmDeleteUrl = async (): Promise<{ success: boolean; message: string }> => {
+    if (!urlToDelete || deletingUrls.has(urlToDelete.id)) {
       return { success: false, message: 'Delete operation already in progress' };
     }
 
-    setDeletingUrls(prev => new Set(prev).add(urlId));
+    setDeletingUrls(prev => new Set(prev).add(urlToDelete.id));
     
     try {
-      const response = await urlsService.deleteUrl(urlId);
+      const response = await urlsService.deleteUrl(urlToDelete.id);
       if (response.success) {
         await loadUrls(); // Refresh the list
+        setShowDeleteUrlModal(false);
+        setUrlToDelete(null);
+        showSnackbar(response.message || 'URL deleted successfully!', 'success');
         return { success: true, message: response.message };
       } else {
         throw new Error(response.message);
       }
     } catch (error) {
       console.error('Failed to delete URL:', error);
-      return { success: false, message: error instanceof Error ? error.message : 'Failed to delete URL' };
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete URL';
+      showSnackbar(errorMessage, 'error');
+      return { success: false, message: errorMessage };
     } finally {
       setDeletingUrls(prev => {
         const newSet = new Set(prev);
-        newSet.delete(urlId);
+        newSet.delete(urlToDelete.id);
         return newSet;
       });
     }
@@ -241,16 +281,19 @@ const PdfManagement: React.FC = () => {
     loadFiles();
     // Close the upload modal
     setShowUploadModal(false);
-  }, []);
+    showSnackbar('PDF uploaded successfully!', 'success');
+  }, [showSnackbar]);
 
   const handleUploadError = useCallback((error: string) => {
     setError(error);
-  }, []);
+    showSnackbar(error, 'error');
+  }, [showSnackbar]);
 
   const handleDelete = useCallback((filename: string) => {
     // Remove file from local state after successful deletion
     setFiles(prev => prev.filter(file => file.filename !== filename));
-  }, []);
+    showSnackbar('PDF deleted successfully!', 'success');
+  }, [showSnackbar]);
 
   const handleView = useCallback((url: string) => {
     // This is handled in the PdfListComponent
@@ -270,15 +313,19 @@ const PdfManagement: React.FC = () => {
             : file
         ));
         
+        const statusText = response.data.is_selected ? 'selected' : 'unselected';
+        showSnackbar(`PDF ${statusText} successfully!`, 'success');
         console.log('PDF selection toggled successfully:', response.data);
       } else {
         throw new Error(response.message || 'Failed to toggle PDF selection');
       }
     } catch (error) {
       console.error('Failed to toggle PDF selection:', error);
-      setError(error instanceof Error ? error.message : 'Failed to toggle PDF selection');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to toggle PDF selection';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     }
-  }, []);
+  }, [showSnackbar]);
 
   return (
     <div className="w-[78vw] min-h-[85vh] bg-gray-100 p-6">
@@ -554,12 +601,7 @@ const PdfManagement: React.FC = () => {
                           </div>
                           <div className="ml-3 flex items-center space-x-2">
                             <button
-                              onClick={async () => {
-                                const result = await handleToggleUrlActive(url.id);
-                                if (!result.success) {
-                                  setUrlsError(result.message);
-                                }
-                              }}
+                              onClick={() => handleToggleUrlActive(url.id)}
                               className={`px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
                                 url.is_active
                                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -570,18 +612,7 @@ const PdfManagement: React.FC = () => {
                             </button>
                             
                             <button
-                              onClick={async () => {
-                                if (window.confirm(`Are you sure you want to delete "${url.title}"?`)) {
-                                  try {
-                                    const result = await handleDeleteUrl(url.id);
-                                    if (!result.success) {
-                                      setUrlsError(result.message);
-                                    }
-                                  } catch (error) {
-                                    setUrlsError(error instanceof Error ? error.message : 'Failed to delete URL');
-                                  }
-                                }
-                              }}
+                              onClick={() => handleDeleteUrl(url)}
                               disabled={deletingUrls.has(url.id)}
                               className={`p-1 rounded transition-colors cursor-pointer ${
                                 deletingUrls.has(url.id)
@@ -883,6 +914,87 @@ const PdfManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Delete URL Confirmation Modal */}
+      <Modal 
+        open={showDeleteUrlModal} 
+        setOpen={(open: boolean) => {
+          setShowDeleteUrlModal(open);
+          if (!open) {
+            setUrlToDelete(null);
+          }
+        }}
+        title="Confirm URL Deletion"
+        description="This action cannot be undone. The URL will be permanently removed from your knowledge base."
+      >
+        {urlToDelete && (
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <Trash2 size={20} className="text-red-600" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <h4 className="text-sm font-medium text-red-800 mb-2">
+                    You are about to delete:
+                  </h4>
+                  <div className="text-sm text-red-700 space-y-1">
+                    <p><strong>Title:</strong> {urlToDelete.title}</p>
+                    <p><strong>URL:</strong> <span className="break-all">{urlToDelete.url}</span></p>
+                    {urlToDelete.description && (
+                      <p><strong>Description:</strong> {urlToDelete.description}</p>
+                    )}
+                    <p><strong>Status:</strong> {urlToDelete.is_active ? 'Active' : 'Inactive'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-700">
+                <strong>Warning:</strong> If this URL is currently part of your knowledge base, 
+                you may need to reload the knowledge base to reflect this change.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteUrlModal(false);
+                  setUrlToDelete(null);
+                }}
+                disabled={deletingUrls.has(urlToDelete.id)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmDeleteUrl()}
+                disabled={deletingUrls.has(urlToDelete.id)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center space-x-2 transition-colors ${
+                  deletingUrls.has(urlToDelete.id)
+                    ? 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {deletingUrls.has(urlToDelete.id) ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    <span>Delete URL</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Add URL Modal */}
       <Modal 
         open={showAddUrlModal} 
@@ -1072,6 +1184,21 @@ const PdfManagement: React.FC = () => {
           className="w-full"
         />
       </Modal>
+
+      {/* Response Component for Snackbar notifications */}
+      <ResponseComponent
+        open={open}
+        handleClose={handleClose}
+        message={message}
+        type={
+          severity === "success" || severity === "error" || severity === "warning"
+            ? severity
+            : severity === "info" 
+              ? "warning" 
+              : "error"
+        }
+        autoHideDuration={4000}
+      />
     </div>
   );
 };

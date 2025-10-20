@@ -1,4 +1,4 @@
-import type { AvailablePdfsResponse, KnowledgeBaseReloadResponse, KnowledgeBaseStats, PdfSyncResponse } from "../types/knowledgeBase";
+import type { AvailablePdfsResponse, KnowledgeBaseReloadResponse, KnowledgeBaseStats, PdfSyncResponse } from "../../types/knowledgeBase";
 
 const LLM_API_BASE_URL =import.meta.env.VITE_LLM_API_BASE_URL; 
 

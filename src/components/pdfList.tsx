@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { FileText, Download, Trash2, Eye, Calendar, HardDrive, CheckCircle, Circle } from 'lucide-react';
+import ResponseComponent from './response';
+import { useSnackbar } from '../hooks/snackBar';
 import type { PdfListComponentProps, PdfFileWithSelection } from '../types/pdf';
-import { pdfService } from '../services/pdfService';
+import pdfService from '../services/knowledgeBase/pdfService';
+
 
 const PdfListComponent: React.FC<PdfListComponentProps> = ({
   files,
@@ -10,6 +13,7 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
   onToggleSelection,
   loading = false
 }) => {
+  const { open, message, severity, showSnackbar, handleClose } = useSnackbar();
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
 
   const handleDelete = async (file: PdfFileWithSelection) => {
@@ -24,18 +28,15 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
     try {
       const result = await pdfService.deletePdf(file.id);
       if (result.success) {
-        // Notify parent component to remove from list
         onDelete?.(file.filename);
-        // Optional: Show success message (you could replace alert with a toast notification)
-        // alert(`Successfully deleted "${file.filename}"`);
+        showSnackbar(`Successfully deleted "${file.filename}"`, 'success');
       } else {
         throw new Error(result.message || 'Delete failed');
       }
     } catch (error) {
       console.error('Delete failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete file. Please try again.';
-      // You could replace this alert with a toast notification or error state
-      alert(`Error: ${errorMessage}`);
+      showSnackbar(`Error: ${errorMessage}`, 'error');
     } finally {
       setDeletingFiles(prev => {
         const newSet = new Set(prev);
@@ -241,6 +242,21 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
           </div>
         ))}
       </div>
+      
+      {/* Response Component for Snackbar notifications */}
+      <ResponseComponent
+        open={open}
+        handleClose={handleClose}
+        message={message}
+        type={
+          severity === "success" || severity === "error" || severity === "warning"
+            ? severity
+            : severity === "info" 
+              ? "warning" 
+              : "error"
+        }
+        autoHideDuration={3000}
+      />
     </div>
   );
 };

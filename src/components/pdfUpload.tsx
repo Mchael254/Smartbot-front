@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import ResponseComponent from './response';
+import { useSnackbar } from '../hooks/snackBar';
 import type { PdfUploadComponentProps, PdfUploadProgress } from '../types/pdf';
-import { pdfService } from '../services/pdfService';
 import FileNamingModal from './fileNamingModal';
+import pdfService from '../services/knowledgeBase/pdfService';
 
 const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
   onUploadSuccess,
@@ -10,6 +12,8 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
   className = '',
   disabled = false
 }) => {
+  const { open, message, severity, showSnackbar, handleClose } = useSnackbar();
+  
   const [dragActive, setDragActive] = useState(false);
   const [uploads, setUploads] = useState<PdfUploadProgress[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -57,7 +61,9 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
     const pdfFiles = files.filter(file => file.name.toLowerCase().endsWith('.pdf'));
     
     if (pdfFiles.length === 0) {
-      onUploadError?.('Please select PDF files only');
+      const errorMsg = 'Please select PDF files only';
+      onUploadError?.(errorMsg);
+      showSnackbar(errorMsg, 'error');
       return;
     }
 
@@ -84,6 +90,10 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
     for (let i = 0; i < pendingFiles.length; i++) {
       const file = pendingFiles[i];
       const uploadIndex = uploads.length + i;
+      
+      // Get custom name for this file (outside try block so it's accessible in catch)
+      const fileKey = getFileKey(file);
+      const customName = fileNames[fileKey]?.trim();
 
       try {
         // Validate file before upload
@@ -94,13 +104,11 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
               ? { ...upload, status: 'error', error: validation.error }
               : upload
           ));
-          onUploadError?.(validation.error || 'File validation failed');
+          const validationErrorMsg = validation.error || 'File validation failed';
+          onUploadError?.(validationErrorMsg);
+          showSnackbar(validationErrorMsg, 'error');
           continue;
         }
-
-        // Get custom name for this file
-        const fileKey = getFileKey(file);
-        const customName = fileNames[fileKey]?.trim();
 
         // Upload with progress tracking
         const response = await pdfService.uploadPdfWithProgress(
@@ -123,6 +131,7 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
         ));
 
         onUploadSuccess?.(response);
+        showSnackbar(`${customName || file.name} uploaded successfully!`, 'success');
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Upload failed';
@@ -134,6 +143,7 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
         ));
 
         onUploadError?.(errorMessage);
+        showSnackbar(`Failed to upload ${customName || file.name}: ${errorMessage}`, 'error');
       }
     }
 
@@ -316,6 +326,21 @@ const PdfUploadComponent: React.FC<PdfUploadComponentProps> = ({
         isOpen={showNamingModal}
         onClose={handleNamingCancel}
         onConfirm={handleNamingConfirm}
+      />
+      
+      {/* Response Component for Snackbar notifications */}
+      <ResponseComponent
+        open={open}
+        handleClose={handleClose}
+        message={message}
+        type={
+          severity === "success" || severity === "error" || severity === "warning"
+            ? severity
+            : severity === "info" 
+              ? "warning" 
+              : "error"
+        }
+        autoHideDuration={3000}
       />
     </div>
   );

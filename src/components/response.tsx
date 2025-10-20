@@ -2,8 +2,6 @@ import { Snackbar, Alert} from "@mui/material";
 import type { ResponseComponentProps } from "../types/response";
 
 
-
-
 function ResponseComponent(props: ResponseComponentProps) {
   const { 
     open, 
