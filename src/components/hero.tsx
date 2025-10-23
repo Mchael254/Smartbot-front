@@ -446,7 +446,7 @@ export default function HeroSection() {
                   <button
                     onClick={sendMessage}
                     disabled={!inputValue.trim()}
-                    className="h-11 w-11 bg-gradient-to-r from-[#00963f] to-[#00b547] text-white rounded-full flex items-center justify-center disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 group"
+                    className="h-11 w-11 bg-gradient-to-r from-[#00963f] to-[#00b547] text-white rounded-full flex items-center justify-center disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 group cursor-pointer"
                   >
                     <FontAwesomeIcon
                       icon={faPaperPlane}

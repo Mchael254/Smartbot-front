@@ -1,9 +1,5 @@
-import type { 
-  PdfUploadResponse, 
-  PdfListResponse,
-  PdfAllResponse,
-  PdfToggleSelectionResponse
-} from '../types/pdf';
+import type { PdfAllResponse, PdfListResponse, PdfToggleSelectionResponse, PdfUploadResponse } from "../../types/pdf";
+
 
 // Base API URL - adjust this to match your backend URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

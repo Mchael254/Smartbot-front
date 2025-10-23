@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Download, Trash2, Eye, Calendar, HardDrive, CheckCircle, Circle } from 'lucide-react';
 import ResponseComponent from './response';
+import BasicModal from './modal';
 import { useSnackbar } from '../hooks/snackBar';
 import type { PdfListComponentProps, PdfFileWithSelection } from '../types/pdf';
 import pdfService from '../services/knowledgeBase/pdfService';
@@ -15,21 +16,27 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
 }) => {
   const { open, message, severity, showSnackbar, handleClose } = useSnackbar();
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<PdfFileWithSelection | null>(null);
 
   const handleDelete = async (file: PdfFileWithSelection) => {
     if (deletingFiles.has(file.id)) return;
 
-    if (!window.confirm(`Are you sure you want to delete "${file.filename}"?`)) {
-      return;
-    }
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  };
 
-    setDeletingFiles(prev => new Set(prev).add(file.id));
+  const confirmDelete = async () => {
+    if (!fileToDelete) return;
+
+    setDeletingFiles(prev => new Set(prev).add(fileToDelete.id));
+    setDeleteModalOpen(false);
 
     try {
-      const result = await pdfService.deletePdf(file.id);
+      const result = await pdfService.deletePdf(fileToDelete.id);
       if (result.success) {
-        onDelete?.(file.filename);
-        showSnackbar(`Successfully deleted "${file.filename}"`, 'success');
+        onDelete?.(fileToDelete.filename);
+        showSnackbar(`Successfully deleted "${fileToDelete.filename}"`, 'success');
       } else {
         throw new Error(result.message || 'Delete failed');
       }
@@ -40,9 +47,10 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
     } finally {
       setDeletingFiles(prev => {
         const newSet = new Set(prev);
-        newSet.delete(file.id);
+        newSet.delete(fileToDelete.id);
         return newSet;
       });
+      setFileToDelete(null);
     }
   };
 
@@ -185,7 +193,7 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
                 <button
                   onClick={() => handleToggleSelection(file)}
                   className={`
-                    px-3 py-1 rounded-lg text-xs font-medium transition-colors
+                    px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer
                     ${file.is_selected
                       ? 'bg-red-100 text-red-700 hover:bg-red-200'
                       : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -198,7 +206,7 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
 
                 <button
                   onClick={() => handleView(file)}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                   title="View PDF"
                 >
                   <Eye size={16} />
@@ -206,7 +214,7 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
 
                 <button
                   onClick={() => handleDownload(file)}
-                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
                   title="Download PDF"
                 >
                   <Download size={16} />
@@ -219,7 +227,7 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
                     p-2 rounded-lg transition-colors
                     ${deletingFiles.has(file.id)
                       ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                      : 'text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
                     }
                   `}
                   title="Delete PDF"
@@ -242,6 +250,32 @@ const PdfListComponent: React.FC<PdfListComponentProps> = ({
           </div>
         ))}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <BasicModal
+        open={deleteModalOpen}
+        setOpen={setDeleteModalOpen}
+        title="Confirm Delete"
+        description={`Are you sure you want to delete "${fileToDelete?.filename}"? This action cannot be undone.`}
+      >
+        <div className="flex justify-end space-x-3 mt-4">
+          <button
+            onClick={() => {
+              setDeleteModalOpen(false);
+              setFileToDelete(null);
+            }}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      </BasicModal>
       
       {/* Response Component for Snackbar notifications */}
       <ResponseComponent

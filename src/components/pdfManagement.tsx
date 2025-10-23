@@ -31,6 +31,7 @@ const PdfManagement: React.FC = () => {
   const [lastReloadResult, setLastReloadResult] = useState<KnowledgeBaseReloadResponse | null>(null);
   const [llmServiceHealth, setLlmServiceHealth] = useState<'healthy' | 'unhealthy' | 'checking'>('checking');
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showReloadKbModal, setShowReloadKbModal] = useState(false);
   
   // URLs state
   const [urls, setUrls] = useState<WebUrl[]>([]);
@@ -128,6 +129,12 @@ const PdfManagement: React.FC = () => {
   };
 
   const handleKnowledgeBaseReload = async () => {
+    setShowReloadKbModal(true);
+  };
+
+  const confirmKnowledgeBaseReload = async () => {
+    setShowReloadKbModal(false);
+    
     try {
       setKbReloading(true);
       setKbError(null);
@@ -382,7 +389,7 @@ const PdfManagement: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setError(null)}
-                  className="ml-auto text-red-400 hover:text-red-600"
+                  className="ml-auto text-red-400 hover:text-red-600 cursor-pointer"
                 >
                   ×
                 </button>
@@ -406,7 +413,7 @@ const PdfManagement: React.FC = () => {
                         kbErrorTimeoutRef.current = null;
                       }
                     }}
-                    className="text-orange-400 hover:text-orange-600"
+                    className="text-orange-400 hover:text-orange-600 cursor-pointer"
                   >
                     ×
                   </button>
@@ -586,7 +593,7 @@ const PdfManagement: React.FC = () => {
                                   href={url.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline block truncate mt-0.5"
+                                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline block truncate mt-0.5 cursor-pointer"
                                   title={url.url}
                                 >
                                   {urlsService.formatUrl(url.url, 60)}
@@ -669,7 +676,7 @@ const PdfManagement: React.FC = () => {
                 `}
               >
                 <Database size={20} className={kbReloading ? 'animate-spin' : ''} />
-                <span>{kbReloading ? 'Reloading Knowledge Base...' : 'Reload Knowledge Base'}</span>
+                <span>{kbReloading ? 'update Knowledge Base...' : 'update Knowledge Base'}</span>
               </button>
             </div>
 
@@ -789,7 +796,7 @@ const PdfManagement: React.FC = () => {
                           href={url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate"
+                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate cursor-pointer"
                           title={url}
                         >
                           {url.length > 50 ? `${url.substring(0, 50)}...` : url}
@@ -964,7 +971,7 @@ const PdfManagement: React.FC = () => {
                   setUrlToDelete(null);
                 }}
                 disabled={deletingUrls.has(urlToDelete.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 Cancel
               </button>
@@ -975,7 +982,7 @@ const PdfManagement: React.FC = () => {
                 className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center space-x-2 transition-colors ${
                   deletingUrls.has(urlToDelete.id)
                     ? 'bg-gray-400 text-gray-300 cursor-not-allowed'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
                 }`}
               >
                 {deletingUrls.has(urlToDelete.id) ? (
@@ -1110,14 +1117,14 @@ const PdfManagement: React.FC = () => {
                 setUrlsError(null);
                 setUrlFormData({ title: '', url: '', description: '' });
               }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={urlsLoading || !urlFormData.title.trim() || !urlFormData.url.trim()}
-              className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center space-x-2 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center space-x-2 transition-colors cursor-pointer ${
                 urlsLoading || !urlFormData.title.trim() || !urlFormData.url.trim()
                   ? 'bg-gray-400 text-gray-300 cursor-not-allowed'
                   : 'bg-green-600 text-white hover:bg-green-700'
@@ -1167,6 +1174,74 @@ const PdfManagement: React.FC = () => {
               <li>Web sources (URLs) are also supported and will be displayed in the Web Sources section</li>
               <li>The AI service must be online (green status) before attempting a reload</li>
             </ul>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Knowledge Base Reload Confirmation Modal */}
+      <Modal 
+        open={showReloadKbModal} 
+        setOpen={setShowReloadKbModal}
+        title="Reload Knowledge Base"
+        description="This will reload the AI model's knowledge base with all selected PDFs and active URLs. This process may take a few moments."
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <Database size={20} className="text-blue-600" />
+              </div>
+              <div className="ml-3 flex-1">
+                <h4 className="text-sm font-medium text-blue-800 mb-2">
+                  What will be reloaded:
+                </h4>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p>• All selected PDF files ({files.filter(f => f.is_selected).length} files)</p>
+                  <p>• All active web URLs ({urls.filter(u => u.is_active).length} URLs)</p>
+                  <p>• Vector embeddings will be regenerated</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-sm text-amber-700">
+              <strong>Note:</strong> This process may take several minutes depending on the amount of content. 
+              Please don't close this window during the reload.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowReloadKbModal(false)}
+              disabled={kbReloading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmKnowledgeBaseReload}
+              disabled={kbReloading || llmServiceHealth !== 'healthy'}
+              className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center space-x-2 transition-colors cursor-pointer ${
+                kbReloading || llmServiceHealth !== 'healthy'
+                  ? 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {kbReloading ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span>Reloading...</span>
+                </>
+              ) : (
+                <>
+                  <Database size={16} />
+                  <span>Start Reload</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </Modal>
