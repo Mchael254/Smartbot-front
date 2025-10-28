@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import Dashboard from '../components/dashboard';
 import TabButton from '../components/tabButton';
 import PdfManagement from '../components/pdfManagement';
+import KnowledgeSourcesPage from './knowledgeSources';
 
 
 
@@ -42,12 +43,12 @@ function Admin() {
     return (
         <div className="min-h-screen w-full flex  items-center justify-center">
 
-            <div className="min-h-screen w-[20vw] border border-gray-200 mx-1 flex flex-col items-center justify-around bg-white py-1">
+            <div className="min-h-screen w-[15vw] border border-gray-200 mx-1 flex flex-col items-center justify-around bg-white py-1">
                 <div>
                     <img src="/icta-logo.png" alt="ICT Authority Logo" className="h-12" />
                 </div>
 
-                <div className='border border-gray-200 h-[80vh] w-75 flex flex-col items-center justify-around'>
+                <div className='border border-gray-200 h-[80vh] w-[13vw] flex flex-col items-center justify-around'>
                     <div className='text-center'>
                         <h1 className="font-bold text-xl">SmartBot</h1>
 
@@ -57,7 +58,8 @@ function Admin() {
 
                         <TabButton prop='Dashboard' onClick={() => { setActiveTab(1) }}></TabButton>
                         <TabButton prop="Knowledge Base" onClick={() => setActiveTab(2)}></TabButton>
-                        <TabButton prop="Users" onClick={() => setActiveTab(4)}></TabButton>
+                        <TabButton prop="Knowledge Sources" onClick={() => setActiveTab(3)}></TabButton>
+                        {/* <TabButton prop="Users" onClick={() => setActiveTab(4)}></TabButton> */}
                         <TabButton prop='Logout' onClick={() => handleLogout()}></TabButton>
 
                     </div>
@@ -70,7 +72,7 @@ function Admin() {
 
             </div>
             <div>
-                <div className='flex justify-center items-center h-[10vh] mb-3 font-bold text-3xl'>
+                <div className='flex justify-center items-center h-[7vh] mb-2 font-bold text-2xl'>
                     <h1>SmartBot Admin</h1>
                 </div>
                 <TabPanel value={activeTab} index={1}>
@@ -79,6 +81,10 @@ function Admin() {
 
                 <TabPanel value={activeTab} index={2}>
                     <PdfManagement />
+                </TabPanel> 
+
+                <TabPanel value={activeTab} index={3}>
+                    <KnowledgeSourcesPage />
                 </TabPanel> 
 
             </div>
